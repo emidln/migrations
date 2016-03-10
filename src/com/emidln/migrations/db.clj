@@ -4,7 +4,7 @@
 
 (defn db-uri-dispatch
   [uri]
-  (.getScheme (URi. uri)))
+  (keyword (.getScheme (URI. uri))))
 
 (defmulti up
   "Applies all outstanding migrations"
@@ -23,11 +23,11 @@
 
 (defmulti create
   "Creates a new migration named [migration-name]"
-  (fn [migrations-dir & [migration-name]]
+  (fn [db-uri migrations-dir & [migration-name]]
     (db-uri-dispatch db-uri)))
 
 (defmethod create :default
-  [migrations-dir & [migration-name]]
+  [db-uri migrations-dir & [migration-name]]
   (let [ts (quot (System/currentTimeMillis) 1000)
         filename (format "%d-%s.sql" ts (or migration-name "new_migration"))
         dir (doto (File. migrations-dir) .mkdirs)
@@ -39,5 +39,5 @@
 
 (defmulti create-db
   "Create the database"
-  (fn [db-uri migrations-dir migrations-table]
+  (fn [db-uri migrations-table]
     (db-uri-dispatch db-uri)))

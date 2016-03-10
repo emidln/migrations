@@ -4,37 +4,38 @@ A Clojure migrations library driven by hate and NIH. If you want transactional D
 
 ## Configuration
 
+### In a clojure project
 Add these `:dependencies` in your `project.clj`:
 
 ```clj
-[com.emidln/migrations "0.1.0-SNAPSHOT"]
-```
 
-Add this to your `:plugins` in your `project.clj`:
-
-```clj
-
-[com.emidln/lein-migrations "0.1.0-SNAPSHOT"]
+[com.emidln/migrations "0.3.0"]
 
 ```
 
-Add this to your `project.clj`:
+### Outside of a clojure project (needs java and lein)
 
-```clj
+```bash
 
-:migrations {
-    ;; where do we store migrations?
-        :migrations-dir "resources/migrations/"
-        ;; what do we call the table to handle the migrations?
-        :migrations-table "schema_migrations"
-        ;; create database if doesn't exist?
-        :migrations-create-database? true
-        ;; where can I find my database?
-        :db ~(get (System/getenv) "DB_URI")
-}
+make && sudo make install
 
 ```
 
+### Environment Variables
+
+#### MIGRATIONS_DB_URI
+
+This is the database URI used to store the migrations. When creating this, the postgres driver will
+first attempt to connect to the `postgres` database first in order to create this database.  This has
+implications w.r.t to database permissioning.
+
+#### MIGRATIONS_DIR
+
+This is the directory your migrations live in. It will be created if it doesn't exist.
+
+#### MIGRATIONS_TABLE
+
+This is the table that we track migrations in. You probably don't have to change this, but you can.
 
 ## Migrations
 
@@ -52,11 +53,19 @@ The integer need not be sequential (this is useful if you happen to have topic-b
 
 ## Usage
 
+Create the database:
+
+```bash
+
+migrations create-db
+
+```
+
 Apply all pending migrations:
 
 ```bash
 
-lein migrate up
+migrations up
 
 ```
 
@@ -64,7 +73,7 @@ Remove the most recent applied migration:
 
 ```bash
 
-lein migrate down
+migrations down
 
 ```
 
@@ -72,7 +81,7 @@ List all migrations and their status:
 
 ```bash
 
-lein migrate status
+migrations status
 
 ```
 
@@ -80,11 +89,11 @@ Create a new migration:
 
 ```bash
 
-lein migrate create [name]
+migrations create [name]
 
 ```
 
-All commands are also available in the com.emidln.migrations namespace via `run`. See docstrings for more info.
+All commands are also available in the com.emidln.migrations namespace. See docstrings for more info.
 
 ## Implementation Notes
 

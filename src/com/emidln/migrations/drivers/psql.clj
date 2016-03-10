@@ -71,12 +71,14 @@
 
 (defn print-formatted-status
   [migration-status]
-  (doseq [[id {:keys [status] :as m}] (sort migration-status)]
-    (println
-     (case status
-       :completed (format "completed migration %s (%d) at %d" (:name m) id (:completed m))
-       :on-disk (format "on-disk migration %s (%d) missing in db" (:name m) id)
-       :in-db (format "in-db migration %s (%d) completed at %d missing on disk" (:name m) id (:completed m))))))
+  (if (seq migration-status)
+    (doseq [[id {:keys [status] :as m}] (sort migration-status)]
+      (println
+       (case status
+         :completed (format "completed migration %s (%d) at %d" (:name m) id (:completed m))
+         :on-disk (format "on-disk migration %s (%d) missing in db" (:name m) id)
+         :in-db (format "in-db migration %s (%d) completed at %d missing on disk" (:name m) id (:completed m)))))
+    (println "No migrations on disk, no migrations in db.")))
 
 (defmethod status :postgres
   [db-uri migrations-dir migrations-table]
@@ -110,9 +112,8 @@
   [db-uri migrations-dir migrations-table]
   (println "not supported :("))
 
-
 (defmethod create-db :postgres
-  [db-uri migrations-dir migrations-table]
+  [db-uri migrations-table]
   (let [original-uri (URI. db-uri)
         postgres-uri (URI. (.getScheme original-uri)
                            (.getUserInfo original-uri)
@@ -121,5 +122,9 @@
                            "/postgres"
                            (.getQuery original-uri)
                            (.getFragment original-uri))
-        sql (format "CREATE DATABASE %s;" (subs (.getPath original-uri) 1))]
-    (psql (str postgres-uri) "-c" sql)))
+        db-sql (format "CREATE DATABASE %s;" (subs (.getPath original-uri) 1))
+        table-sql (format
+                   "CREATE TABLE %s (id SERIAL PRIMARY KEY, name TEXT NOT NULL, ts TIMESTAMPTZ NOT NULL);"
+                   migrations-table)]
+    (psql (str postgres-uri) "-c" db-sql)
+    (psql (str original-uri) "-c" table-sql)))
