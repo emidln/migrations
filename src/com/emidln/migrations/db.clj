@@ -41,3 +41,8 @@
   "Create the database"
   (fn [db-uri migrations-table]
     (db-uri-dispatch db-uri)))
+
+(defmulti backfill
+  "Backfills migrations into the migrations table"
+  (fn [db-uri migrations-dir migrations-table]
+    (db-uri-dispatch db-uri)))

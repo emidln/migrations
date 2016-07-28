@@ -1,5 +1,5 @@
 (ns com.emidln.migrations.drivers.psql
-  (:require [com.emidln.migrations.db :refer [up down status create create-db]]
+  (:require [com.emidln.migrations.db :refer [up down status create create-db backfill]]
             [clojure.string :as str]
             [clojure.java.shell :refer [sh]])
   (:import java.io.File
@@ -80,6 +80,22 @@
          :in-db (format "in-db migration %s (%d) completed at %d missing on disk" (:name m) id (:completed m)))))
     (println "No migrations on disk, no migrations in db.")))
 
+(defn ts
+  []
+  (quot (System/currentTimeMillis) 1000))
+
+
+(defn backfile-from-status
+  [db-uri migrations-table migration-status]
+  ;; display a status
+  (print-formatted-status migration-status)
+  ;; perform the backfill
+  (let [migrations (->> (map second migration-status)
+                        (filter (comp #{:on-disk} :status)))]
+    (println (format "Backfilling %d migrations" (count migrations)))
+    (doseq [m migrations]
+      (record-migration-up db-uri migrations-table (:id m) (:name m) (ts)))))
+
 (defmethod status :postgres
   [db-uri migrations-dir migrations-table]
   (print-formatted-status (calc-status db-uri migrations-dir migrations-table)))
@@ -87,10 +103,6 @@
 (defn migration-direction
   [m]
   (second (re-matches #".*\.(up|down)\.sql" (-> m :file .getName))))
-
-(defn ts
-  []
-  (quot (System/currentTimeMillis) 1000))
 
 (defn apply-migration
   [db-uri migrations-table {:keys [id name file] :as migration}]
@@ -124,7 +136,12 @@
                            (.getFragment original-uri))
         db-sql (format "CREATE DATABASE %s;" (subs (.getPath original-uri) 1))
         table-sql (format
-                   "CREATE TABLE %s (id SERIAL PRIMARY KEY, name TEXT NOT NULL, ts TIMESTAMPTZ NOT NULL);"
+                   "CREATE TABLE %s (id SERIAL PRIMARY KEY, name TEXT NOT NULL, ts BIGINT NOT NULL);"
                    migrations-table)]
     (psql (str postgres-uri) "-c" db-sql)
     (psql (str original-uri) "-c" table-sql)))
+
+(defmethod backfill :postgres
+  [db-uri migrations-dir migrations-table]
+  (let [status (calc-status db-uri migrations-dir migrations-table)]
+    (backfile-from-status db-uri migrations-table status)))

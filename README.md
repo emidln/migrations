@@ -9,7 +9,7 @@ Add these `:dependencies` in your `project.clj`:
 
 ```clj
 
-[com.emidln/migrations "0.3.0"]
+[com.emidln/migrations "0.4.0"]
 
 ```
 
@@ -92,6 +92,15 @@ Create a new migration:
 migrations create [name]
 
 ```
+
+Backfill on-disk migrations to the database (just insert the records, don't run the DDL):
+
+```bash
+
+migrations backfill
+
+```
+
 
 All commands are also available in the com.emidln.migrations namespace. See docstrings for more info.
 

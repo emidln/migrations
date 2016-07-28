@@ -37,6 +37,10 @@
   [_ {:keys [migrations-db-uri migrations-table]} _]
   (db/create-db migrations-db-uri migrations-table))
 
+(defmethod run :backfill
+  [_ {:keys [migrations-db-uri migrations-dir migrations-table]} _]
+  (db/backfill migrations-db-uri migrations-dir migrations-table))
+
 (def help
   "Usage: java -jar migrations.jar command
 
@@ -45,8 +49,10 @@
      status                 - Print status of all migrations in MIGRATIONS_DIR and at MIGRATIONS_DB_URI
      up                     - Run all migrations in need of running in MIGRATIONS_DIR at MIGRATIONS_DB_URI
      down                   - Roll back the last known migration (not implemented)
-     create-db              - Create the database specified by MIGRATIONS_DB_URI
+     create-db              - Idempotently create the database and table specified by MIGRATIONS_DB_URI
      create                 - Create an empty migration in MIGRATIONS_DIR
+     backfill               - Backfill the existing migrations in a directory to the database without executing
+                            - said migrations.
 
    Configuration:
 
