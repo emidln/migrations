@@ -1,6 +1,7 @@
 (ns com.emidln.migrations
   (:require [com.emidln.migrations.db :as db]
-            com.emidln.migrations.drivers.psql)
+            com.emidln.migrations.drivers.psql
+            [com.emidln.migrations.build-info :as bi])
   (:gen-class))
 
 (defn env
@@ -42,7 +43,9 @@
   (db/backfill migrations-db-uri migrations-dir migrations-table))
 
 (def help
-  "Usage: java -jar migrations.jar command
+  "  Migrations v%s (build time: %s)
+
+  Usage: java -jar migrations.jar command
 
    Commands:
 
@@ -69,9 +72,12 @@
 
 (defmethod run :default
   [_ _ _]
-  (let [e (env)]
+  (let [e (env)
+        build-info (bi/read-build-info)]
     (println
      (format help
+             (:project-version build-info)
+             (:timestamp build-info)
              (:migrations-db-uri e)
              (:migrations-dir e)
              (:migrations-table e)))))

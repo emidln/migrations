@@ -10,3 +10,4 @@ pom.xml.asc
 .hgignore
 .hg/
 .#*
+src/com_emidln_migrations_build_info.edn
