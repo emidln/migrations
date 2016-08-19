@@ -1,4 +1,4 @@
-(defproject com.emidln/migrations "0.6.0"
+(defproject com.emidln/migrations "0.7.0"
   :description "Migrations for lazy people"
   :url "https://github.com/emidln/lazy-migrations"
   :main com.emidln.migrations
