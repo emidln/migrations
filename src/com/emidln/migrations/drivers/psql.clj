@@ -10,9 +10,10 @@
   [db-uri & args]
   (let [r (apply sh "psql" db-uri args)]
     (if (= (:exit r) 0)
-      (:out r)
-      (do (println (:err  r))
-          nil))))
+      [true (:out r)]
+      (do
+        (println (:err r))
+        [false (:errr r)]))))
 
 (defn list-migration-files
   [direction migration-dir]
@@ -110,9 +111,17 @@
                    name
                    id
                    (.toUpperCase (migration-direction migration))))
-  (println (psql db-uri "-f" (.getPath file)))
-  (record-migration-up db-uri migrations-table id name (ts))
-  (println (format "Done.")))
+  (let [[?success message] (psql db-uri "-f" (.getPath file))]
+    (if ?success
+      (do
+        (println message)
+        (record-migration-up db-uri migrations-table id name (ts))
+        (println (format "Done.")))
+      (do
+        (println (format "Failed. Aborting!"))
+        (throw (ex-info "Applying Migration Failed!" {:migrations migration
+                                                      :db-uri db-uri
+                                                      :migrations-table migrations-table}))))))
 
 (defmethod up :postgres
   [db-uri migrations-dir migrations-table]
