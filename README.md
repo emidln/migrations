@@ -7,11 +7,7 @@ A Clojure migrations library driven by hate and NIH. If you want transactional D
 ### In a clojure project
 Add these `:dependencies` in your `project.clj`:
 
-```clj
-
-[com.emidln/migrations "0.4.0"]
-
-```
+[![Clojars Project](https://img.shields.io/clojars/v/com.emidln/migrations.svg)](https://clojars.org/com.emidln/migrations)
 
 ### Outside of a clojure project (needs java and lein)
 
