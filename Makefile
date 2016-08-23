@@ -17,3 +17,6 @@ clean:
 	lein clean
 	rm -rf target/
 
+sudoinstall:
+	make clean build && sudo make install
+

@@ -49,26 +49,30 @@
 (defn calc-status
   [db-uri migrations-dir migrations-table]
   (let [sql (format "SELECT id, name, ts FROM %s;" migrations-table)
-        out (or (psql db-uri "-tc" sql) "")
-        existing-migrations (->> out
-                                 str/split-lines
-                                 (remove #{"" " " nil})
-                                 (map #(map str/trim (str/split % #"\|+")))
-                                 (map #(hash-map (BigInteger. (first %))
-                                                 [(second %) (BigInteger. (nth % 2))]))
-                                 (apply merge))
-        possible-migrations (list-migration-up-files migrations-dir)
-        migrations (merge-with #(assoc %1 :completed (second %2)) possible-migrations existing-migrations)]
-    (into {}
-          (for [[id m] (sort migrations)]
-            (if (map? m)
-              (if (:completed m)
-                [id (assoc m :status :completed)]
-                [id (assoc m :status :on-disk)])
-              [id {:status :in-db
-                   :name (first m)
-                   :id id
-                   :completed (second m)}])))))
+        [?success ?out] (psql db-uri "-tc" sql)]
+    (if ?success
+      (let [out (or ?out "")
+            existing-migrations (->> out
+                                     str/split-lines
+                                     (remove #{"" " " nil})
+                                     (map #(map str/trim (str/split % #"\|+")))
+                                     (map #(hash-map (BigInteger. (first %))
+                                                     [(second %) (BigInteger. (nth % 2))]))
+                                     (apply merge))
+            possible-migrations (list-migration-up-files migrations-dir)
+            migrations (merge-with #(assoc %1 :completed (second %2)) possible-migrations existing-migrations)]
+          (into {}
+                (for [[id m] (sort migrations)]
+                  (if (map? m)
+                    (if (:completed m)
+                      [id (assoc m :status :completed)]
+                      [id (assoc m :status :on-disk)])
+                    [id {:status :in-db
+                         :name (first m)
+                         :id id
+                         :completed (second m)}]))))
+      (do (println (format "Problem reading migrations table (%s) at %s. Does it exist?" migrations-table db-uri))
+          (System/exit 2)))))
 
 (defn print-formatted-status
   [migration-status]
